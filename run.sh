@@ -6,7 +6,7 @@ if [[ -z $cluster ]]; then
   cluster=slp
 fi
 
-solana_version=0.23.2
+solana_version=1.0.4
 
 case $cluster in
 slp)
