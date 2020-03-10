@@ -14,6 +14,10 @@ devnet)
   ;;
 slp)
   rpc_url=http://34.82.79.31
+  source_stake_account=BMN8mAJ3Wxoi3RAKWx6NPJyk7WkkRwYi8awriUYcYMV9
+  #source_stake_account=Gih5wD2kgwuHvecJTmD1Udu8TZNQDamY37SzuWugmBep
+  #source_stake_account=Bkd4QoSvjkpK8SbQ5kieycCK7978qS14BpinQ5jmiogp
+  #source_stake_account=3KnbTtzw3s6GTMoXWsVaSeGS6Sfeg2eLSeE3mXHo7UWG
   ;;
 tds)
   rpc_url=http://tds.solana.com
@@ -106,14 +110,19 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
   if ! solana --url $rpc_url stake-account "$stake_address"; then
     (
       set -x
-      solana --url $rpc_url --keypair $staking_keypair create-stake-account $staking_keypair --seed "$seed" 5000
+
+      if [[ -n $source_stake_account ]]; then
+        solana --url $rpc_url --keypair $staking_keypair split-stake $source_stake_account $staking_keypair --seed "$seed" 5000
+      else
+        solana --url $rpc_url --keypair $staking_keypair create-stake-account $staking_keypair --seed "$seed" 5000
+      fi
     )
   fi
 
   if ((current)); then
     (
       set -x
-      echo solana --url $rpc_url --keypair $staking_keypair delegate-stake "$stake_address" "$vote_pubkey"
+      solana --url $rpc_url --keypair $staking_keypair delegate-stake "$stake_address" "$vote_pubkey"
     ) || true
   else
     (
