@@ -89,7 +89,7 @@ done
 [[ -n $staking_keypair ]] || exit
 (
   set -x
-  solana --keypair $staking_keypair balance
+  solana --url $rpc_url --keypair $staking_keypair balance
 )
 current=1
 for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}"; do
@@ -100,24 +100,24 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
 
   seed="${vote_pubkey:0:32}"
 
-  stake_address="$(solana --keypair $staking_keypair create-address-with-seed "$seed" STAKE)"
+  stake_address="$(solana --url $rpc_url --keypair $staking_keypair create-address-with-seed "$seed" STAKE)"
   echo "Vote account: $vote_pubkey | Stake address: $stake_address"
-  if ! solana stake-account "$stake_address"; then
+  if ! solana --url $rpc_url stake-account "$stake_address"; then
     (
       set -x
-      solana --keypair $staking_keypair create-stake-account $staking_keypair --seed "$seed" 5000
+      solana --url $rpc_url --keypair $staking_keypair create-stake-account $staking_keypair --seed "$seed" 5000
     )
   fi
 
   if ((current)); then
     (
       set -x
-      solana --keypair $staking_keypair delegate-stake "$stake_address" "$vote_pubkey"
+      solana --url $rpc_url --keypair $staking_keypair delegate-stake "$stake_address" "$vote_pubkey"
     )
   else
     (
       set -x
-      solana --keypair $staking_keypair deactivate-stake "$stake_address"
+      solana --url $rpc_url --keypair $staking_keypair deactivate-stake "$stake_address"
     )
   fi
 done
