@@ -6,7 +6,7 @@ if [[ -z $cluster ]]; then
   cluster=slp
 fi
 
-solana_version=1.0.5
+solana_version=beta
 
 case $cluster in
 devnet)
