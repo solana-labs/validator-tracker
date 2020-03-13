@@ -39,7 +39,7 @@ cd "$(dirname "$0")"
 . configure-metrics.sh
 
 if [[ -n $CI ]]; then
-  curl -sSf https://raw.githubusercontent.com/solana-labs/solana/v$solana_version/install/solana-install-init.sh \
+  curl -sSf https://raw.githubusercontent.com/solana-labs/solana/v1.0.0/install/solana-install-init.sh \
     | sh -s - $solana_version \
         --no-modify-path \
         --data-dir ./solana \
