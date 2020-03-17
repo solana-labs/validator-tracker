@@ -11,7 +11,7 @@ solana_version=beta
 case $cluster in
 mainnet-beta)
   rpc_url=http://api.mainnet-beta.solana.com
-  #source_stake_account=BMN8mAJ3Wxoi3RAKWx6NPJyk7WkkRwYi8awriUYcYMV9
+  #source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
   #authorized_staker=~/mainnet-beta-authorized-staker.json
   ;;
 devnet)
@@ -54,39 +54,56 @@ current_slot=$(solana --url $rpc_url get-slot)
 validators=$(solana --url $rpc_url show-validators)
 
 max_slot_distance=216000 # ~24 hours worth of slots at 2.5 slots per second
+stake_amount=5000
 
 
 current_vote_pubkeys=()
 delinquent_vote_pubkeys=()
 
 # Current validators:
-for id_vote_slot in $(echo "$validators" | sed -ne "s/^  \\([^ ]*\\)   *\\([^ ]*\\) *[0-9]*%  *\\([0-9]*\\) .*/\\1=\\2=\\3/p"); do
-  declare id=${id_vote_slot%%=*}
-  declare vote_slot=${id_vote_slot#*=}
-  declare vote=${vote_slot%%=*}
-  declare slot=${vote_slot##*=}
+for id_vote_slot_stake in $(echo "$validators" | sed -ne "s/^  \\([^ ]*\\)   *\\([^ ]*\\) *[0-9]*%  *\\([0-9]*\\)  *[0-9]*  *[0-9]*  *\\([0-9-]*\\).*/\\1=\\2=\\3=\\4/p"); do
+  declare id=${id_vote_slot_stake%%=*}
+  declare vote_slot_stake=${id_vote_slot_stake#*=}
+  declare vote=${vote_slot_stake%%=*}
+  declare slot_stake=${vote_slot_stake##*=}
+  declare slot=${slot_stake%%=*}
+  declare stake=${slot_stake##*=}
 
-  current_vote_pubkeys+=("$vote")
+  if [[ $stake = - ]]; then
+    stake=0
+  fi
+  if [[ $stake -lt $((stake_amount / 4)) ]]; then
+    echo "$id needs stake"
+    current_vote_pubkeys+=("$vote")
+  fi
   $metricsWriteDatapoint "validators,cluster=$cluster,id=$id,ok=true slot=${slot}"
 done
 
 # Delinquent validators:
-for id_vote_slot in $(echo "$validators" | sed -ne "s/^\\(⚠️ \\|! \\)\\([^ ]*\\) *\\([^ ]*\\) *[0-9]*%  *\\([0-9]*\\) .*/\\2=\\3=\\4/p"); do
-  declare id=${id_vote_slot%%=*}
-  declare vote_slot=${id_vote_slot#*=}
-  declare vote=${vote_slot%%=*}
-  declare slot=${vote_slot##*=}
+for id_vote_slot_stake in $(echo "$validators" | sed -ne "s/^\\(⚠️ \\|! \\)\\([^ ]*\\) *\\([^ ]*\\) *[0-9]*%  *\\([0-9]*\\)  *[0-9]*  *[0-9]*  *\\([0-9-]*\\).*/\\2=\\3=\\4=\\5/p"); do
+  declare id=${id_vote_slot_stake%%=*}
+  declare vote_slot_stake=${id_vote_slot_stake#*=}
+  declare vote=${vote_slot_stake%%=*}
+  declare slot_stake=${vote_slot_stake##*=}
+  declare slot=${slot_stake%%=*}
+  declare stake=${slot_stake##*=}
+
+  if [[ $stake = - ]]; then
+    stake=0
+  fi
 
   if ((slot < current_slot - max_slot_distance)); then
-    delinquent_vote_pubkeys+=("$vote")
+    if [[ $stake -gt $((stake_amount * 75 / 100)) ]]; then
+      echo "$id should not have stake"
+      delinquent_vote_pubkeys+=("$vote")
+    fi
     $metricsWriteDatapoint "validators,cluster=$cluster,id=$id,ok=false slot=${slot}"
   else
-    current_vote_pubkeys+=("$vote")
+    # Don't flag a validator that's been delinquent for less than 24 hours, but
+    # also don't give them stake
     $metricsWriteDatapoint "validators,cluster=$cluster,id=$id,ok=true slot=${slot}"
   fi
 done
-
-
 
 #
 # Run through all the current/delinquent vote accounts and delegate/deactivate
@@ -114,9 +131,9 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
       set -x
 
       if [[ -n $source_stake_account ]]; then
-        solana --url $rpc_url --keypair $authorized_staker split-stake $source_stake_account $authorized_staker --seed "$seed" 5000
+        solana --url $rpc_url --keypair $authorized_staker split-stake $source_stake_account $authorized_staker --seed "$seed" $stake_amount
       else
-        solana --url $rpc_url --keypair $authorized_staker create-stake-account $authorized_staker --seed "$seed" 5000
+        solana --url $rpc_url --keypair $authorized_staker create-stake-account $authorized_staker --seed "$seed" $stake_amount
       fi
     )
   fi
