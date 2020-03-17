@@ -11,6 +11,8 @@ solana_version=beta
 case $cluster in
 mainnet-beta)
   rpc_url=http://api.mainnet-beta.solana.com
+  #source_stake_account=BMN8mAJ3Wxoi3RAKWx6NPJyk7WkkRwYi8awriUYcYMV9
+  #authorized_staker=~/mainnet-beta-authorized-staker.json
   ;;
 devnet)
   rpc_url=http://devnet.solana.com:8899
