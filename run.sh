@@ -3,35 +3,35 @@
 
 cluster=$1
 if [[ -z $cluster ]]; then
-  cluster=slp
+  cluster=mainnet-beta
 fi
 
 solana_version=beta
 
 case $cluster in
+mainnet-beta)
+  rpc_url=http://api.mainnet-beta.solana.com
+  ;;
 devnet)
   rpc_url=http://devnet.solana.com:8899
   ;;
 slp)
   rpc_url=http://34.82.79.31
   source_stake_account=BMN8mAJ3Wxoi3RAKWx6NPJyk7WkkRwYi8awriUYcYMV9
+  authorized_staker=~/slp-authorized-staker.json
   #source_stake_account=Gih5wD2kgwuHvecJTmD1Udu8TZNQDamY37SzuWugmBep
   #source_stake_account=Bkd4QoSvjkpK8SbQ5kieycCK7978qS14BpinQ5jmiogp
   #source_stake_account=3KnbTtzw3s6GTMoXWsVaSeGS6Sfeg2eLSeE3mXHo7UWG
   ;;
 tds)
   rpc_url=http://tds.solana.com
+  authorized_staker=~/tds-authorized-staker.json
   ;;
 *)
   echo "Error: unsupported cluster: $cluster"
   exit 1
   ;;
 esac
-
-if [[ -n $STAKE_KEYPAIR ]]; then
-  echo "$STAKE_KEYPAIR" > ${cluster}_stake_keypair.json
-  staking_keypair=${cluster}_stake_keypair.json
-fi
 
 set -e
 cd "$(dirname "$0")"
@@ -90,10 +90,10 @@ done
 # Run through all the current/delinquent vote accounts and delegate/deactivate
 # stake.  This is done quite naively
 #
-[[ -n $staking_keypair ]] || exit
+[[ -n $authorized_staker ]] || exit
 (
   set -x
-  solana --url $rpc_url --keypair $staking_keypair balance
+  solana --url $rpc_url --keypair $authorized_staker balance
 )
 current=1
 for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}"; do
@@ -104,7 +104,7 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
 
   seed="${vote_pubkey:0:32}"
 
-  stake_address="$(solana --url $rpc_url --keypair $staking_keypair create-address-with-seed "$seed" STAKE)"
+  stake_address="$(solana --url $rpc_url --keypair $authorized_staker create-address-with-seed "$seed" STAKE)"
   echo "Vote account: $vote_pubkey | Stake address: $stake_address"
 
   if ! solana --url $rpc_url stake-account "$stake_address"; then
@@ -112,9 +112,9 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
       set -x
 
       if [[ -n $source_stake_account ]]; then
-        solana --url $rpc_url --keypair $staking_keypair split-stake $source_stake_account $staking_keypair --seed "$seed" 5000
+        solana --url $rpc_url --keypair $authorized_staker split-stake $source_stake_account $authorized_staker --seed "$seed" 5000
       else
-        solana --url $rpc_url --keypair $staking_keypair create-stake-account $staking_keypair --seed "$seed" 5000
+        solana --url $rpc_url --keypair $authorized_staker create-stake-account $authorized_staker --seed "$seed" 5000
       fi
     )
   fi
@@ -122,12 +122,12 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
   if ((current)); then
     (
       set -x
-      solana --url $rpc_url --keypair $staking_keypair delegate-stake "$stake_address" "$vote_pubkey"
+      solana --url $rpc_url --keypair $authorized_staker delegate-stake "$stake_address" "$vote_pubkey"
     ) || true
   else
     (
       set -x
-      solana --url $rpc_url --keypair $staking_keypair deactivate-stake "$stake_address"
+      solana --url $rpc_url --keypair $authorized_staker deactivate-stake "$stake_address"
     ) || true
   fi
 done
