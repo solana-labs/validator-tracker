@@ -109,7 +109,7 @@ done
 # Run through all the current/delinquent vote accounts and delegate/deactivate
 # stake.  This is done quite naively
 #
-[[ -n $authorized_staker ]] || exit
+[[ -n $authorized_staker ]] || exit 0
 (
   set -x
   solana --url $rpc_url --keypair $authorized_staker balance
