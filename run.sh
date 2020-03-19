@@ -11,19 +11,11 @@ solana_version=beta
 case $cluster in
 mainnet-beta)
   rpc_url=http://api.mainnet-beta.solana.com
-  #source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
-  #authorized_staker=~/mainnet-beta-authorized-staker.json
+  source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
+  authorized_staker=~/mainnet-beta-authorized-staker.json
   ;;
 devnet)
   rpc_url=http://devnet.solana.com:8899
-  ;;
-slp)
-  rpc_url=http://34.82.79.31
-  source_stake_account=BMN8mAJ3Wxoi3RAKWx6NPJyk7WkkRwYi8awriUYcYMV9
-  authorized_staker=~/slp-authorized-staker.json
-  #source_stake_account=Gih5wD2kgwuHvecJTmD1Udu8TZNQDamY37SzuWugmBep
-  #source_stake_account=Bkd4QoSvjkpK8SbQ5kieycCK7978qS14BpinQ5jmiogp
-  #source_stake_account=3KnbTtzw3s6GTMoXWsVaSeGS6Sfeg2eLSeE3mXHo7UWG
   ;;
 tds)
   rpc_url=http://tds.solana.com
