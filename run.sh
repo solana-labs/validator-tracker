@@ -106,8 +106,7 @@ for id_vote_slot_stake in $(echo "$validators" | sed -ne "s/^\\(⚠️ \\|! \\)\
 done
 
 #
-# Run through all the current/delinquent vote accounts and delegate/deactivate
-# stake.  This is done quite naively
+# Run through all the current/delinquent vote accounts and delegate/deactivate stake
 #
 [[ -n $authorized_staker ]] || exit 0
 (
