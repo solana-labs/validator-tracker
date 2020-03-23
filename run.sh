@@ -8,10 +8,19 @@ fi
 
 solana_version=beta
 
+max_slot_distance=216000 # ~24 hours worth of slots at 2.5 slots per second
+stake_amount=5000
+seed_prefix=
+
 case $cluster in
 mainnet-beta)
+  #stake_amount=50000
+  #seed_prefix=A
   rpc_url=http://api.mainnet-beta.solana.com
   source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
+  #source_stake_account=3Mown222pxyKCDDGLpGJJD8L3HH3BZ9MMmrYKtin3ZBi
+  #source_stake_account=2w52TS1ixFkKF57ctvkngz3cvwJ6kAVUk5y3Lm2AcqZr
+  #source_stake_account=7bEc4uCz4mECXwynU5iR5Xr5A8tbWJ5Nyx7YWfvUmaZE
   authorized_staker=~/mainnet-beta-authorized-staker.json
   ;;
 devnet)
@@ -45,10 +54,6 @@ fi
 current_slot=$(solana --url $rpc_url get-slot)
 validators=$(solana --url $rpc_url show-validators)
 
-max_slot_distance=216000 # ~24 hours worth of slots at 2.5 slots per second
-stake_amount=5000
-
-
 current_vote_pubkeys=()
 delinquent_vote_pubkeys=()
 
@@ -57,7 +62,7 @@ for id_vote_slot_stake in $(echo "$validators" | sed -ne "s/^  \\([^ ]*\\)   *\\
   declare id=${id_vote_slot_stake%%=*}
   declare vote_slot_stake=${id_vote_slot_stake#*=}
   declare vote=${vote_slot_stake%%=*}
-  declare slot_stake=${vote_slot_stake##*=}
+  declare slot_stake=${vote_slot_stake#*=}
   declare slot=${slot_stake%%=*}
   declare stake=${slot_stake##*=}
 
@@ -76,7 +81,7 @@ for id_vote_slot_stake in $(echo "$validators" | sed -ne "s/^\\(⚠️ \\|! \\)\
   declare id=${id_vote_slot_stake%%=*}
   declare vote_slot_stake=${id_vote_slot_stake#*=}
   declare vote=${vote_slot_stake%%=*}
-  declare slot_stake=${vote_slot_stake##*=}
+  declare slot_stake=${vote_slot_stake#*=}
   declare slot=${slot_stake%%=*}
   declare stake=${slot_stake##*=}
 
@@ -112,7 +117,8 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
     continue
   fi
 
-  seed="${vote_pubkey:0:32}"
+  seed="${seed_prefix}{$vote_pubkey}"
+  seed="${seed:0:32}"
 
   stake_address="$(solana --url $rpc_url --keypair $authorized_staker create-address-with-seed "$seed" STAKE)"
   echo "Vote account: $vote_pubkey | Stake address: $stake_address"
