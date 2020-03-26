@@ -14,13 +14,12 @@ seed_prefix=
 
 case $cluster in
 mainnet-beta)
-  #stake_amount=50000
-  #seed_prefix=A
+  stake_amount=50000
+  seed_prefix=A
   rpc_url=http://api.mainnet-beta.solana.com
   source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
-  #source_stake_account=3Mown222pxyKCDDGLpGJJD8L3HH3BZ9MMmrYKtin3ZBi
-  #source_stake_account=2w52TS1ixFkKF57ctvkngz3cvwJ6kAVUk5y3Lm2AcqZr
-  #source_stake_account=7bEc4uCz4mECXwynU5iR5Xr5A8tbWJ5Nyx7YWfvUmaZE
+  source_stake_account=7bEc4uCz4mECXwynU5iR5Xr5A8tbWJ5Nyx7YWfvUmaZE
+
   authorized_staker=~/mainnet-beta-authorized-staker.json
   ;;
 devnet)
@@ -117,7 +116,12 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
     continue
   fi
 
-  seed="${seed_prefix}{$vote_pubkey}"
+  if [[ -z $seed_prefix ]]; then
+    seed="$vote_pubkey"
+  else
+    # Oops, maintain stray '{' as mainnet-beta accounts already exist with '{' included
+    seed="${seed_prefix}{$vote_pubkey}"
+  fi
   seed="${seed:0:32}"
 
   stake_address="$(solana --url $rpc_url --keypair $authorized_staker create-address-with-seed "$seed" STAKE)"
