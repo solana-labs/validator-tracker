@@ -7,7 +7,7 @@ if [[ -z $cluster ]]; then
 fi
 
 solana_version=beta
-solana_version=1.0.10
+solana_version=1.0.12
 
 max_slot_distance=216000 # ~24 hours worth of slots at 2.5 slots per second
 stake_amount=5000
