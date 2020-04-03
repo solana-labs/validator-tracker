@@ -12,12 +12,15 @@ solana_version=beta
 max_slot_distance=216000 # ~24 hours worth of slots at 2.5 slots per second
 stake_amount=5000
 seed_prefix=
+allow_new_stake_accounts=true
 
 case $cluster in
 mainnet-beta)
   stake_amount=50000
   seed_prefix=A
   rpc_url=http://api.mainnet-beta.solana.com
+  allow_new_stake_accounts=false
+
   source_stake_account=oBR5GGynSXtzEBgLoV9vyACqgxGX2amXbe1U4HLBPEL
   source_stake_account=7bEc4uCz4mECXwynU5iR5Xr5A8tbWJ5Nyx7YWfvUmaZE
 
@@ -129,15 +132,19 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
   echo "Vote account: $vote_pubkey | Stake address: $stake_address"
 
   if ! solana --url $rpc_url stake-account "$stake_address"; then
-    (
-      set -x
+    if $allow_new_stake_accounts; then
+      (
+        set -x
 
-      if [[ -n $source_stake_account ]]; then
-        solana --url $rpc_url --keypair $authorized_staker split-stake $source_stake_account $authorized_staker --seed "$seed" $stake_amount
-      else
-        solana --url $rpc_url --keypair $authorized_staker create-stake-account $authorized_staker --seed "$seed" $stake_amount
-      fi
-    )
+        if [[ -n $source_stake_account ]]; then
+          solana --url $rpc_url --keypair $authorized_staker split-stake $source_stake_account $authorized_staker --seed "$seed" $stake_amount
+        else
+          solana --url $rpc_url --keypair $authorized_staker create-stake-account $authorized_staker --seed "$seed" $stake_amount
+        fi
+      )
+    else
+      echo "!! New stake accounts not allowed.  Unable to stake $stake_address"
+    fi
   fi
 
   if ((current)); then
