@@ -57,6 +57,10 @@ fi
 current_slot=$(solana --url $rpc_url get-slot)
 validators=$(solana --url $rpc_url show-validators)
 
+echo -------------------------------------------------------------------
+echo "Note: Validators at slot $((current_slot - max_slot_distance)) or less will be de-staked"
+echo -------------------------------------------------------------------
+
 current_vote_pubkeys=()
 delinquent_vote_pubkeys=()
 
