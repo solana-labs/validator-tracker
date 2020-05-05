@@ -148,6 +148,7 @@ for vote_pubkey in "${current_vote_pubkeys[@]}" - "${delinquent_vote_pubkeys[@]}
       )
     else
       echo "!! New stake accounts not allowed.  Unable to stake $stake_address"
+      continue
     fi
   fi
 
